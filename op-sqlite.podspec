@@ -53,6 +53,7 @@ fts5 = false
 rtree = false
 use_sqlite_vec = false
 tokenizers = []
+use_zstd = false
 
 if(op_sqlite_config != nil)
   use_sqlcipher = op_sqlite_config["sqlcipher"] == true
@@ -65,6 +66,7 @@ if(op_sqlite_config != nil)
   rtree = op_sqlite_config["rtree"] == true
   use_sqlite_vec = op_sqlite_config["sqliteVec"] == true
   tokenizers = op_sqlite_config["tokenizers"] || []
+  use_zstd = op_sqlite_config["zstd"] == true
 end
 
 if phone_version then
@@ -183,6 +185,12 @@ Pod::Spec.new do |s|
     log_message.call("[OP-SQLITE] using Sqlite Vec ↗️")
     xcconfig[:GCC_PREPROCESSOR_DEFINITIONS] += " OP_SQLITE_USE_SQLITE_VEC=1"
     frameworks.push("ios/sqlitevec.xcframework")
+  end
+
+  if use_zstd then
+    log_message.call("[OP-SQLITE] using zstd 📉")
+    xcconfig[:GCC_PREPROCESSOR_DEFINITIONS] += " OP_SQLITE_USE_ZSTD=1"
+    frameworks.push("ios/libzstd.xcframework")
   end
 
   if use_libsql then
