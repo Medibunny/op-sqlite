@@ -109,10 +109,16 @@ RCT_EXPORT_METHOD(moveAssetsDatabase : (NSDictionary *)args resolve : (
         NSLibraryDirectory, NSUserDomainMask, true) objectAtIndex:0];
 
     NSString *filename = args[@"filename"];
-    BOOL overwrite = args[@"overwrite"];
+    BOOL overwrite = [args[@"overwrite"] boolValue];
 
     NSString *sourcePath = [[NSBundle mainBundle] pathForResource:filename
                                                            ofType:nil];
+    
+    if (sourcePath == nil) {
+        NSString *msg = [NSString stringWithFormat:@"Asset not found for file: %@", filename];
+        reject(@"op-sqlite-error", msg, nil);
+        return;
+    }
 
     NSString *destinationPath =
         [documentPath stringByAppendingPathComponent:filename];
