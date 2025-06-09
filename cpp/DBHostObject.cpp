@@ -165,26 +165,38 @@ DBHostObject::DBHostObject(jsi::Runtime &rt,
 
 #endif
 
-DBHostObject::DBHostObject(jsi::Runtime &rt, std::string &base_path,
+DBHostObject::DBHostObject(jsi::Runtime &rt, std::string path,
                            std::shared_ptr<react::CallInvoker> invoker,
-                           std::string &db_name, std::string &path,
-                           std::string &crsqlite_path,
-                           std::string &sqlite_vec_path,
-                           std::string &encryption_key)
-    : base_path(base_path), invoker(std::move(invoker)), db_name(db_name),
-      rt(rt) {
-    _thread_pool = std::make_shared<ThreadPool>();
+                           std::string name, std::string db_path,
+                           std::string crsqlite_path,
+                           std::string sqlite_vec_path, std::string zstd_path,
+                           std::string encryption_key)
+    : _name(name), _path(db_path), _crsqlite_path(crsqlite_path),
+      _sqlite_vec_path(sqlite_vec_path), _zstd_path(zstd_path),
+      _encryption_key(encryption_key), _status(std::make_shared<std::atomic<bool>>(true)),
+      _queue(std::make_shared<OPQueue>()),
+      _host(std::make_shared<react::CallInvoker>(invoker)),
+      _thread(std::make_shared<OPThreadPool>(1)) {
+    opsqlite_open(path.c_str(), &_db);
 
-#ifdef OP_SQLITE_USE_SQLCIPHER
-    db = opsqlite_open(db_name, path, crsqlite_path, sqlite_vec_path,
-                       encryption_key);
-#elif OP_SQLITE_USE_LIBSQL
-    db = opsqlite_libsql_open(db_name, path, crsqlite_path);
-#else
-    db = opsqlite_open(db_name, path, crsqlite_path, sqlite_vec_path);
+#ifdef OP_SQLITE_USE_CRSQLITE
+    if (!_crsqlite_path.empty()) {
+        opsqlite_load_extension(_db, _crsqlite_path.c_str(), "sqlite3_crsqlite_init");
+    }
 #endif
+#ifdef OP_SQLITE_USE_SQLITE_VEC
+    if (!_sqlite_vec_path.empty()) {
+        opsqlite_load_extension(_db, _sqlite_vec_path.c_str(), "sqlite3_sqlite_vec_init");
+    }
+#endif
+#ifdef OP_SQLITE_USE_ZSTD
+    if (!_zstd_path.empty()) {
+        opsqlite_load_extension(_db, _zstd_path.c_str(), "sqlite3_zstd_init");
+    }
+#endif
+
     create_jsi_functions();
-};
+}
 
 void DBHostObject::create_jsi_functions() {
     function_map["attach"] = HOSTFN("attach") {

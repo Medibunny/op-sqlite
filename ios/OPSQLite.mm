@@ -82,6 +82,11 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(install) {
         [NSBundle bundleWithIdentifier:@"com.ospfranco.sqlitevec"];
     NSString *sqlite_vec_path =
         [libsqlitevec_bundle pathForResource:@"sqlitevec" ofType:@""];
+    
+    NSBundle *libzstd_bundle =
+        [NSBundle bundleWithIdentifier:@"com.facebook.zstd"];
+    NSString *zstd_path =
+        [libzstd_bundle pathForResource:@"libzstd" ofType:@""];
 
     if (crsqlite_path == nil) {
         crsqlite_path = @"";
@@ -90,9 +95,14 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(install) {
     if (sqlite_vec_path == nil) {
         sqlite_vec_path = @"";
     }
+    
+    if (zstd_path == nil) {
+        zstd_path = @"";
+    }
 
     opsqlite::install(runtime, callInvoker, [documentPath UTF8String],
-                      [crsqlite_path UTF8String], [sqlite_vec_path UTF8String]);
+                      [crsqlite_path UTF8String], [sqlite_vec_path UTF8String],
+                      [zstd_path UTF8String]);
     return @true;
 }
 

@@ -40,15 +40,15 @@ struct ReactiveQuery {
 class JSI_EXPORT DBHostObject : public jsi::HostObject {
   public:
     // Normal constructor shared between all backends
-    DBHostObject(jsi::Runtime &rt, std::string &base_path,
-                 std::shared_ptr<react::CallInvoker> invoker,
-                 std::string &db_name, std::string &path,
-                 std::string &crsqlite_path, std::string &sqlite_vec_path,
-                 std::string &encryption_key);
+    DBHostObject(jsi::Runtime &rt, std::string path,
+                 std::shared_ptr<react::CallInvoker> invoker, std::string name,
+                 std::string db_path, std::string crsqlite_path,
+                 std::string sqlite_vec_path, std::string zstd_path,
+                 std::string encryption_key);
 
 #ifdef OP_SQLITE_USE_LIBSQL
     // Constructor for remoteOpen, purely for remote databases
-    DBHostObject(jsi::Runtime &rt, std::string &url, std::string &auth_token,
+    DBHostObject(jsi::Runtime &rt, std::string url, std::string auth_token,
                  std::shared_ptr<react::CallInvoker> invoker);
 
     // Constructor for a local database with remote sync
@@ -93,6 +93,15 @@ class JSI_EXPORT DBHostObject : public jsi::HostObject {
     DB db;
 #else
     sqlite3 *db;
+#endif
+    std::string _name;
+    std::string _path;
+    std::string _crsqlite_path;
+    std::string _sqlite_vec_path;
+    std::string _zstd_path;
+    std::string _encryption_key;
+#ifdef OP_SQLITE_USE_LIBSQL
+    int _sync_interval;
 #endif
 };
 
