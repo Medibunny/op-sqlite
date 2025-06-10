@@ -190,7 +190,6 @@ Pod::Spec.new do |s|
   if use_zstd then
     log_message.call("[OP-SQLITE] using zstd 📉")
     xcconfig[:GCC_PREPROCESSOR_DEFINITIONS] += " OP_SQLITE_USE_ZSTD=1"
-    xcconfig[:HEADER_SEARCH_PATHS] = "\"$(PODS_ROOT)/op-sqlite/ios/libzstd.xcframework/ios-arm64/libzstd.framework/Headers\""
     frameworks.push("ios/libzstd.xcframework")
   end
 
@@ -221,4 +220,5 @@ Pod::Spec.new do |s|
   s.pod_target_xcconfig = xcconfig
   s.vendored_frameworks = frameworks
   s.exclude_files = exclude_files
+  s.header_dir = "cpp"
 end
