@@ -47,26 +47,26 @@ void install(jsi::Runtime &rt,
     _zstd_path = std::string(zstd_path);
 
     auto open = HOST_STATIC_FN("open") {
-        jsi::Object options = args[0].asObject(rt);
+        jsi::Object options = args[0].asObject();
         std::string name =
-            options.getProperty(rt, "name").asString(rt).utf8(rt);
+            options.getProperty(runtime, "name").asString().utf8(runtime);
         std::string path = std::string(_base_path);
         std::string location;
         std::string encryption_key;
 
-        if (options.hasProperty(rt, "location")) {
+        if (options.hasProperty(runtime, "location")) {
             location =
-                options.getProperty(rt, "location").asString(rt).utf8(rt);
+                options.getProperty(runtime, "location").asString().utf8(runtime);
         }
 
-        if (options.hasProperty(rt, "encryptionKey")) {
+        if (options.hasProperty(runtime, "encryptionKey")) {
             encryption_key =
-                options.getProperty(rt, "encryptionKey").asString(rt).utf8(rt);
+                options.getProperty(runtime, "encryptionKey").asString().utf8(runtime);
         }
 
 #ifdef OP_SQLITE_USE_SQLCIPHER
         if (encryption_key.empty()) {
-            log_to_console(rt, "Encryption key is missing for SQLCipher");
+            log_to_console(runtime, "Encryption key is missing for SQLCipher");
         }
 #endif
 
@@ -81,10 +81,10 @@ void install(jsi::Runtime &rt,
         }
 
         std::shared_ptr<DBHostObject> db = std::make_shared<DBHostObject>(
-            rt, path, invoker, name, path, _crsqlite_path, _sqlite_vec_path,
+            runtime, path, invoker, name, _base_path, _crsqlite_path, _sqlite_vec_path,
             _zstd_path, encryption_key);
         dbs.emplace_back(db);
-        return jsi::Object::createFromHostObject(rt, db);
+        return jsi::Object::createFromHostObject(runtime, db);
     });
 
     auto is_sqlcipher = HOST_STATIC_FN("isSQLCipher") {
@@ -171,9 +171,9 @@ void install(jsi::Runtime &rt,
     module.setProperty(rt, "isIOSEmbedded", std::move(is_ios_embedded));
 
     auto zstd_compress = HOST_STATIC_FN("zstdCompress") {
-        auto path = args[0].asString(rt).utf8(rt);
+        auto path = args[0].asString().utf8(runtime);
         auto result = opsqlite::zstd_compress_file(path);
-        return jsi::String::createFromUtf8(rt, result);
+        return jsi::String::createFromUtf8(runtime, result);
     });
     module.setProperty(rt, "zstdCompress", std::move(zstd_compress));
 

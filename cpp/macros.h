@@ -12,4 +12,4 @@ jsi::Function::createFromHostFunction( \
 rt, \
 jsi::PropNameID::forAscii(rt, name), \
 0, \
-[=](jsi::Runtime &runtime, const jsi::Value &thisValue, const jsi::Value *args, size_t count) -> jsi::Value
+[&](jsi::Runtime &runtime, const jsi::Value &thisValue, const jsi::Value *args, size_t count) -> jsi::Value

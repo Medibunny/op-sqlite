@@ -38,9 +38,5 @@ struct ImportResult {
 
 namespace opsqlite {
 
-typedef std::variant<std::string, int, double, bool, std::nullptr_t,
-                     std::vector<uint8_t>>
-    JSVariant;
-
 }
 
