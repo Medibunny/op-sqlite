@@ -15,8 +15,44 @@
 /* ======   Dependencies   ======*/
 #include <stddef.h>   /* size_t */
 
-#include "zstd_errors.h" /* list of errors */
+/*!
+ *  zstd_errors.h file should be embedded into zstd.h
+ */
+typedef enum {
+  ZSTD_error_no_error = 0,
+  ZSTD_error_GENERIC = 1,
+  ZSTD_error_prefix_unknown = 10,
+  ZSTD_error_version_unsupported = 12,
+  ZSTD_error_frameParameter_unsupported = 14,
+  ZSTD_error_frameParameter_windowTooLarge = 16,
+  ZSTD_error_corruption_detected = 20,
+  ZSTD_error_checksum_wrong = 22,
+  ZSTD_error_dictionary_corrupted = 30,
+  ZSTD_error_dictionary_wrong = 32,
+  ZSTD_error_dictionaryCreation_failed = 34,
+  ZSTD_error_parameter_unsupported = 40,
+  ZSTD_error_parameter_outOfBound = 42,
+  ZSTD_error_tableLog_tooLarge = 44,
+  ZSTD_error_maxSymbolValue_tooLarge = 46,
+  ZSTD_error_stage_wrong = 60,
+  ZSTD_error_init_missing = 62,
+  ZSTD_error_memory_allocation = 64,
+  ZSTD_error_workSpace_tooSmall = 66,
+  ZSTD_error_dstSize_tooSmall = 70,
+  ZSTD_error_srcSize_wrong = 72,
+  ZSTD_error_dstBuffer_null = 74,
+  /* following error codes are __NOT__ stable and may be modified or removed in future versions */
+  ZSTD_error_frameIndex_tooLarge = 100,
+  ZSTD_error_seekableIO = 102,
+  ZSTD_error_dstBuffer_wrong = 104,
+  ZSTD_error_srcBuffer_wrong = 105,
+  ZSTD_error_sequenceProducer_failed = 106,
+  ZSTD_error_externalSequences_invalid = 107,
+  ZSTD_error_maxCode = 120
+} ZSTD_ErrorCode;
+
 #if defined(ZSTD_STATIC_LINKING_ONLY) && !defined(ZSTD_H_ZSTD_STATIC_LINKING_ONLY)
+#define ZSTD_H_ZSTD_STATIC_LINKING_ONLY
 #include <limits.h>   /* INT_MAX */
 #endif /* ZSTD_STATIC_LINKING_ONLY */
 
@@ -1558,7 +1594,7 @@ ZSTDLIB_STATIC_API size_t ZSTD_getFrameHeader_advanced(ZSTD_FrameHeader* zfhPtr,
  */
 ZSTDLIB_STATIC_API size_t ZSTD_decompressionMargin(const void* src, size_t srcSize);
 
-/*! ZSTD_DECOMPRESS_MARGIN() :
+/*! ZSTD_DECOMPRESSION_MARGIN() :
  * Similar to ZSTD_decompressionMargin(), but instead of computing the margin from
  * the compressed frame, compute it from the original size and the blockSizeLog.
  * See ZSTD_decompressionMargin() for details.

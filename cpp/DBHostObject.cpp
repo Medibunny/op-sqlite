@@ -174,7 +174,11 @@ DBHostObject::DBHostObject(jsi::Runtime &rt, std::string path,
     : rt(rt), db_name(name), base_path(std::move(db_path)),
       invoker(std::move(invoker)),
       _thread_pool(std::make_shared<ThreadPool>()) {
-    opsqlite_open(path.c_str(), &db);
+#ifdef OP_SQLITE_USE_SQLCIPHER
+    db = opsqlite_open(name, path, crsqlite_path, sqlite_vec_path, encryption_key);
+#else
+    db = opsqlite_open(name, path, crsqlite_path, sqlite_vec_path);
+#endif
 
 #ifdef OP_SQLITE_USE_CRSQLITE
     if (!crsqlite_path.empty()) {
