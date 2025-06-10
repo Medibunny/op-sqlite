@@ -117,6 +117,8 @@ Pod::Spec.new do |s|
 
   # Assign the collected source files to `s.source_files`
   s.source_files = source_files
+  s.public_header_files = Dir.glob("cpp/**/*.h")
+  s.header_mappings_dir = "cpp"
 
   xcconfig = {
     :GCC_PREPROCESSOR_DEFINITIONS => "HAVE_FULLFSYNC=1",
@@ -220,5 +222,4 @@ Pod::Spec.new do |s|
   s.pod_target_xcconfig = xcconfig
   s.vendored_frameworks = frameworks
   s.exclude_files = exclude_files
-  s.header_dir = "cpp"
 end
