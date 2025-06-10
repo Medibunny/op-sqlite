@@ -31,3 +31,8 @@ struct BatchArguments {
     std::string sql;
     std::vector<JSVariant> params;
 };
+
+struct ImportResult {
+    int affectedRows;
+    int commands;
+};
