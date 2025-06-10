@@ -22,7 +22,6 @@ namespace jsi = facebook::jsi;
 std::string _base_path;
 std::string _crsqlite_path;
 std::string _sqlite_vec_path;
-std::string _zstd_path;
 std::vector<std::shared_ptr<DBHostObject>> dbs;
 
 // React native will try to clean the module on JS context invalidation
@@ -40,33 +39,32 @@ void invalidate() {
 void install(jsi::Runtime &rt,
              const std::shared_ptr<react::CallInvoker> &invoker,
              const char *base_path, const char *crsqlite_path,
-             const char *sqlite_vec_path, const char *zstd_path) {
+             const char *sqlite_vec_path) {
     _base_path = std::string(base_path);
     _crsqlite_path = std::string(crsqlite_path);
     _sqlite_vec_path = std::string(sqlite_vec_path);
-    _zstd_path = std::string(zstd_path);
 
     auto open = HOST_STATIC_FN("open") {
-        jsi::Object options = args[0].asObject();
+        jsi::Object options = args[0].asObject(rt);
         std::string name =
-            options.getProperty(runtime, "name").asString().utf8(runtime);
+            options.getProperty(rt, "name").asString(rt).utf8(rt);
         std::string path = std::string(_base_path);
         std::string location;
         std::string encryption_key;
 
-        if (options.hasProperty(runtime, "location")) {
+        if (options.hasProperty(rt, "location")) {
             location =
-                options.getProperty(runtime, "location").asString().utf8(runtime);
+                options.getProperty(rt, "location").asString(rt).utf8(rt);
         }
 
-        if (options.hasProperty(runtime, "encryptionKey")) {
+        if (options.hasProperty(rt, "encryptionKey")) {
             encryption_key =
-                options.getProperty(runtime, "encryptionKey").asString().utf8(runtime);
+                options.getProperty(rt, "encryptionKey").asString(rt).utf8(rt);
         }
 
 #ifdef OP_SQLITE_USE_SQLCIPHER
         if (encryption_key.empty()) {
-            log_to_console(runtime, "Encryption key is missing for SQLCipher");
+            log_to_console(rt, "Encryption key is missing for SQLCipher");
         }
 #endif
 
@@ -81,10 +79,10 @@ void install(jsi::Runtime &rt,
         }
 
         std::shared_ptr<DBHostObject> db = std::make_shared<DBHostObject>(
-            runtime, path, invoker, name, _base_path, _crsqlite_path, _sqlite_vec_path,
-            _zstd_path, encryption_key);
+            rt, path, invoker, name, path, _crsqlite_path, _sqlite_vec_path,
+            encryption_key);
         dbs.emplace_back(db);
-        return jsi::Object::createFromHostObject(runtime, db);
+        return jsi::Object::createFromHostObject(rt, db);
     });
 
     auto is_sqlcipher = HOST_STATIC_FN("isSQLCipher") {
@@ -169,14 +167,6 @@ void install(jsi::Runtime &rt,
     module.setProperty(rt, "isSQLCipher", std::move(is_sqlcipher));
     module.setProperty(rt, "isLibsql", std::move(is_libsql));
     module.setProperty(rt, "isIOSEmbedded", std::move(is_ios_embedded));
-
-    auto zstd_compress = HOST_STATIC_FN("zstdCompress") {
-        auto path = args[0].asString().utf8(runtime);
-        auto result = opsqlite::zstd_compress_file(path);
-        return jsi::String::createFromUtf8(runtime, result);
-    });
-    module.setProperty(rt, "zstdCompress", std::move(zstd_compress));
-
 #ifdef OP_SQLITE_USE_LIBSQL
     module.setProperty(rt, "openRemote", std::move(open_remote));
     module.setProperty(rt, "openSync", std::move(open_sync));
