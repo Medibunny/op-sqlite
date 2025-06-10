@@ -94,15 +94,6 @@ class JSI_EXPORT DBHostObject : public jsi::HostObject {
 #else
     sqlite3 *db;
 #endif
-    std::string _name;
-    std::string _path;
-    std::string _crsqlite_path;
-    std::string _sqlite_vec_path;
-    std::string _zstd_path;
-    std::string _encryption_key;
-#ifdef OP_SQLITE_USE_LIBSQL
-    int _sync_interval;
-#endif
 };
 
 } // namespace opsqlite

@@ -169,6 +169,14 @@ void install(jsi::Runtime &rt,
     module.setProperty(rt, "isSQLCipher", std::move(is_sqlcipher));
     module.setProperty(rt, "isLibsql", std::move(is_libsql));
     module.setProperty(rt, "isIOSEmbedded", std::move(is_ios_embedded));
+
+    auto zstd_compress = HOST_STATIC_FN("zstdCompress") {
+        auto path = args[0].asString(rt).utf8(rt);
+        auto result = opsqlite::zstd_compress_file(path);
+        return jsi::String::createFromUtf8(rt, result);
+    });
+    module.setProperty(rt, "zstdCompress", std::move(zstd_compress));
+
 #ifdef OP_SQLITE_USE_LIBSQL
     module.setProperty(rt, "openRemote", std::move(open_remote));
     module.setProperty(rt, "openSync", std::move(open_sync));

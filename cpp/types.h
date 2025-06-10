@@ -31,3 +31,16 @@ struct BatchArguments {
     std::string sql;
     std::vector<JSVariant> params;
 };
+struct ImportResult {
+    int commands;
+    int affectedRows;
+};
+
+namespace opsqlite {
+
+typedef std::variant<std::string, int, double, bool, std::nullptr_t,
+                     std::vector<uint8_t>>
+    JSVariant;
+
+}
+

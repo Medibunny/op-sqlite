@@ -171,27 +171,26 @@ DBHostObject::DBHostObject(jsi::Runtime &rt, std::string path,
                            std::string crsqlite_path,
                            std::string sqlite_vec_path, std::string zstd_path,
                            std::string encryption_key)
-    : _name(name), _path(db_path), _crsqlite_path(crsqlite_path),
-      _sqlite_vec_path(sqlite_vec_path), _zstd_path(zstd_path),
-      _encryption_key(encryption_key), _status(std::make_shared<std::atomic<bool>>(true)),
-      _queue(std::make_shared<OPQueue>()),
-      _host(std::make_shared<react::CallInvoker>(invoker)),
-      _thread(std::make_shared<OPThreadPool>(1)) {
-    opsqlite_open(path.c_str(), &_db);
+    : rt(rt), db_name(name), base_path(std::move(db_path)),
+      invoker(std::move(invoker)),
+      _thread_pool(std::make_shared<ThreadPool>()) {
+    opsqlite_open(path.c_str(), &db);
 
 #ifdef OP_SQLITE_USE_CRSQLITE
-    if (!_crsqlite_path.empty()) {
-        opsqlite_load_extension(_db, _crsqlite_path.c_str(), "sqlite3_crsqlite_init");
+    if (!crsqlite_path.empty()) {
+        opsqlite_load_extension(db, crsqlite_path.c_str(),
+                                "sqlite3_crsqlite_init");
     }
 #endif
 #ifdef OP_SQLITE_USE_SQLITE_VEC
-    if (!_sqlite_vec_path.empty()) {
-        opsqlite_load_extension(_db, _sqlite_vec_path.c_str(), "sqlite3_sqlite_vec_init");
+    if (!sqlite_vec_path.empty()) {
+        opsqlite_load_extension(db, sqlite_vec_path.c_str(),
+                                "sqlite3_sqlite_vec_init");
     }
 #endif
 #ifdef OP_SQLITE_USE_ZSTD
-    if (!_zstd_path.empty()) {
-        opsqlite_load_extension(_db, _zstd_path.c_str(), "sqlite3_zstd_init");
+    if (!zstd_path.empty()) {
+        opsqlite_load_extension(db, zstd_path.c_str(), "sqlite3_zstd_init");
     }
 #endif
 
@@ -396,10 +395,6 @@ void DBHostObject::create_jsi_functions() {
                             resolve->asObject(rt).asFunction(rt).call(
                                 rt, std::move(jsiResult));
                         });
-                    // On Android RN is broken and does not correctly match
-                    // runtime_error to the generic exception We have to
-                    // explicitly catch it
-                    // https://github.com/facebook/react-native/issues/48027
                 } catch (std::runtime_error &e) {
                     auto what = e.what();
                     invoker->invokeAsync(
@@ -445,7 +440,7 @@ void DBHostObject::create_jsi_functions() {
             auto resolve = std::make_shared<jsi::Value>(rt, args[0]);
             auto reject = std::make_shared<jsi::Value>(rt, args[1]);
 
-            auto task = [&rt, this, query, params, resolve, reject]() {
+            auto task = [this, &rt, query, params, resolve, reject]() {
                 try {
                     std::vector<DumbHostObject> results;
                     std::shared_ptr<std::vector<SmartHostObject>> metadata =
@@ -598,7 +593,7 @@ void DBHostObject::create_jsi_functions() {
             auto resolve = std::make_shared<jsi::Value>(rt, args[0]);
             auto reject = std::make_shared<jsi::Value>(rt, args[1]);
 
-            auto task = [&rt, this, sqlFileName, resolve, reject]() {
+            auto task = [this, &rt, sqlFileName, resolve, reject]() {
                 try {
                     const auto result = import_sql_file(db, sqlFileName);
 
@@ -801,7 +796,7 @@ void DBHostObject::create_jsi_functions() {
     auto promise = promiseCtr.callAsConstructor(rt, HOSTFN("executor") {
             auto resolve = std::make_shared<jsi::Value>(rt, args[0]);
 
-            auto task = [&rt, this, resolve]() {
+            auto task = [this, &rt, resolve]() {
                 flush_pending_reactive_queries(resolve);
             };
 
@@ -811,6 +806,55 @@ void DBHostObject::create_jsi_functions() {
     }));
 
     return promise;
+    });
+
+    function_map["compressFile"] = HOSTFN("compressFile") {
+        if (count < 1 || !args[0].isString()) {
+            throw std::runtime_error("[op-sqlite][compressFile] A file path string is required.");
+        }
+        const std::string source_path = args[0].asString(rt).utf8(rt);
+
+        auto promiseCtr = rt.global().getPropertyAsFunction(rt, "Promise");
+        auto promise = promiseCtr.callAsConstructor(rt, HOSTFN("executor") {
+            auto resolve = std::make_shared<jsi::Value>(rt, args[0]);
+            auto reject = std::make_shared<jsi::Value>(rt, args[1]);
+
+            auto task = [this, &rt, source_path, resolve, reject]() {
+                try {
+                    const auto compressed_path = zstd_compress_file(source_path);
+
+                    if (invalidated) {
+                        return;
+                    }
+
+                    invoker->invokeAsync([&rt, compressed_path, resolve] {
+                        resolve->asObject(rt).asFunction(rt).call(rt, jsi::String::createFromUtf8(rt, compressed_path));
+                    });
+                } catch (std::runtime_error &e) {
+                    auto what = e.what();
+                    invoker->invokeAsync([&rt, what = std::string(what), reject] {
+                        auto errorCtr =
+                            rt.global().getPropertyAsFunction(rt, "Error");
+                        auto error = errorCtr.callAsConstructor(
+                            rt, jsi::String::createFromAscii(rt, what));
+                        reject->asObject(rt).asFunction(rt).call(rt, error);
+                    });
+                } catch (std::exception &exc) {
+                    auto what = exc.what();
+                    invoker->invokeAsync([&rt, what = std::string(what), reject] {
+                        auto errorCtr =
+                            rt.global().getPropertyAsFunction(rt, "Error");
+                        auto error = errorCtr.callAsConstructor(
+                            rt, jsi::String::createFromAscii(rt, what));
+                        reject->asObject(rt).asFunction(rt).call(rt, error);
+                    });
+                }
+            };
+            _thread_pool->queueWork(task);
+            return {};
+        }));
+
+        return promise;
     });
 }
 
