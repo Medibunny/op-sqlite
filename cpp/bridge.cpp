@@ -93,7 +93,7 @@ sqlite3 *opsqlite_open(std::string const &name, std::string const &path,
                        [[maybe_unused]] std::string const &sqlite_vec_path) {
 #endif
     std::string final_path = opsqlite_get_db_path(name, path);
-    char *errMsg;
+    char *errorMessage = nullptr;
     sqlite3 *db;
 
     int flags =
@@ -119,10 +119,10 @@ sqlite3 *opsqlite_open(std::string const &name, std::string const &path,
     const char *crsqliteEntryPoint = "sqlite3_crsqlite_init";
 
     sqlite3_load_extension(db, crsqlite_path.c_str(), crsqliteEntryPoint,
-                           &errMsg);
+                           &errorMessage);
 
-    if (errMsg != nullptr) {
-        throw std::runtime_error(errMsg);
+    if (errorMessage != nullptr) {
+        throw std::runtime_error(errorMessage);
     }
 #endif
 
@@ -130,10 +130,10 @@ sqlite3 *opsqlite_open(std::string const &name, std::string const &path,
     const char *vec_entry_point = "sqlite3_vec_init";
 
     sqlite3_load_extension(db, sqlite_vec_path.c_str(), vec_entry_point,
-                           &errMsg);
+                           &errorMessage);
 
-    if (errMsg != nullptr) {
-        throw std::runtime_error(errMsg);
+    if (errorMessage != nullptr) {
+        throw std::runtime_error(errorMessage);
     }
 #endif
 

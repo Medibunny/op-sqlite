@@ -58,14 +58,14 @@ jsi::Value PreparedStatementHostObject::get(jsi::Runtime &rt,
                                                                 &params);
 #endif
                                         _js_call_invoker->invokeAsync(
-                                            [this, &rt, resolve] {
+                                            [&rt, resolve] {
                                                 resolve->asObject(rt)
                                                     .asFunction(rt)
                                                     .call(rt, {});
                                             });
                                     } catch (const std::runtime_error &e) {
                                         _js_call_invoker->invokeAsync(
-                                            [this, &rt, e, reject] {
+                                            [&rt, e, reject] {
                                                 auto errorCtr =
                                                     rt.global()
                                                         .getPropertyAsFunction(
@@ -84,7 +84,7 @@ jsi::Value PreparedStatementHostObject::get(jsi::Runtime &rt,
                                             });
                                     } catch (const std::exception &e) {
                                         _js_call_invoker->invokeAsync(
-                                            [this, &rt, e, reject] {
+                                            [&rt, e, reject] {
                                                 auto errorCtr =
                                                     rt.global()
                                                         .getPropertyAsFunction(
@@ -196,7 +196,7 @@ jsi::Value PreparedStatementHostObject::get(jsi::Runtime &rt,
                                     });
                                 } catch (std::exception &exc) {
                                     _js_call_invoker->invokeAsync(
-                                        [this, &rt, &exc, reject] {
+                                        [&rt, &exc, reject] {
                                             auto errorCtr =
                                                 rt.global()
                                                     .getPropertyAsFunction(
@@ -210,7 +210,7 @@ jsi::Value PreparedStatementHostObject::get(jsi::Runtime &rt,
                                             reject->asObject(rt)
                                                 .asFunction(rt)
                                                 .call(rt, error);
-										});
+                                        });
                                 }
                             };
 
