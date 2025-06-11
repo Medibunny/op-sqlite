@@ -223,7 +223,7 @@ Pod::Spec.new do |s|
   s.header_dir = "cpp"
   s.requires_arc = true
   s.frameworks = "Security"
-  s.compiler_flags = "-Wall -Werror -fno-strict-aliasing -std=c++20"
+  s.compiler_flags = "-Wall -Werror -fno-strict-aliasing"
   s.pod_target_xcconfig = { 'CLANG_CXX_LANGUAGE_STANDARD' => 'c++20' }
   s.user_target_xcconfig = { 'CLANG_CXX_LANGUAGE_STANDARD' => 'c++20' }
 end
