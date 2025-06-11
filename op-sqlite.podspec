@@ -91,12 +91,12 @@ Pod::Spec.new do |s|
   s.name         = "op-sqlite"
   s.version      = package["version"]
   s.summary      = package["description"]
-  s.homepage     = package["homepage"]
-  s.license      = package["license"]
-  s.authors      = package["author"]
+  s.homepage     = "https://github.com/OP-Engineering/op-sqlite"
+  s.license      = "MIT"
+  s.author       = { "author" => "info@op-engineering.com" }
 
   s.platforms    = { :ios => "13.0", :tvos => "13.0", :osx => "10.15", :visionos => "1.0" }
-  s.source       = { :git => "https://github.com/op-engineering/op-sqlite.git", :tag => "#{s.version}" }
+  s.source       = { :git => "https://github.com/OP-Engineering/op-sqlite.git", :tag => "#{s.version}" }
   
   # Base source files
   source_files = Dir.glob("ios/**/*.{h,m,mm}") + Dir.glob("cpp/**/*.{h,cpp,c}")
@@ -221,4 +221,9 @@ Pod::Spec.new do |s|
   s.vendored_frameworks = frameworks
   s.exclude_files = exclude_files
   s.header_dir = "cpp"
+  s.requires_arc = true
+  s.frameworks = "Security"
+  s.compiler_flags = "-Wall -Werror -fno-strict-aliasing -std=c++20"
+  s.pod_target_xcconfig = { 'CLANG_CXX_LANGUAGE_STANDARD' => 'c++20' }
+  s.user_target_xcconfig = { 'CLANG_CXX_LANGUAGE_STANDARD' => 'c++20' }
 end
