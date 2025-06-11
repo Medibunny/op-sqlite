@@ -1,6 +1,9 @@
 project(OPSQLite)
 cmake_minimum_required(VERSION 3.9.0)
 
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 set (PACKAGE_NAME "op-sqlite")
 
 include_directories(
@@ -141,3 +144,5 @@ else ()
     )
   endif()
 endif()
+
+target_compile_features(${PACKAGE_NAME} PRIVATE cxx_std_20)

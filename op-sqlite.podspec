@@ -121,9 +121,9 @@ Pod::Spec.new do |s|
   s.header_mappings_dir = "cpp"
 
   xcconfig = {
+    :CLANG_CXX_LANGUAGE_STANDARD => "c++20",
     :GCC_PREPROCESSOR_DEFINITIONS => "HAVE_FULLFSYNC=1",
     :WARNING_CFLAGS => "-Wno-shorten-64-to-32 -Wno-comma -Wno-unreachable-code -Wno-conditional-uninitialized -Wno-deprecated-declarations",
-    :CLANG_CXX_LANGUAGE_STANDARD => "c++17",
   }
 
   log_message.call("[OP-SQLITE] Configuration found at #{package_json_path}")
