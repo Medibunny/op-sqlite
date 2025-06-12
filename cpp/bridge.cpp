@@ -93,7 +93,9 @@ sqlite3 *opsqlite_open(std::string const &name, std::string const &path,
                        [[maybe_unused]] std::string const &sqlite_vec_path) {
 #endif
     std::string final_path = opsqlite_get_db_path(name, path);
+#if defined(OP_SQLITE_USE_CRSQLITE) || defined(OP_SQLITE_USE_SQLITE_VEC)
     char *errMsg = nullptr;
+#endif
     sqlite3 *db;
 
     int flags =
@@ -181,7 +183,7 @@ BridgeResult opsqlite_execute_prepared_statement(
     sqlite3 *db, sqlite3_stmt *statement, std::vector<DumbHostObject> *results,
     std::shared_ptr<std::vector<SmartHostObject>> &metadatas) {
 
-    const char *errorMessage;
+    const char *errorMessage = nullptr;
 
     bool isConsuming = true;
     bool isFailed = false;
@@ -463,7 +465,7 @@ BridgeResult opsqlite_execute_host_objects(
     std::shared_ptr<std::vector<SmartHostObject>> &metadatas) {
 
     sqlite3_stmt *statement;
-    const char *errorMessage;
+    const char *errorMessage = nullptr;
     const char *remainingStatement = nullptr;
 
     bool isConsuming = true;
@@ -610,7 +612,8 @@ BridgeResult opsqlite_execute_host_objects(
     if (isFailed) {
         throw std::runtime_error(
             "[op-sqlite] SQLite error code: " + std::to_string(result) +
-            ", description: " + std::string(errorMessage));
+            ", description: " +
+            (errorMessage ? errorMessage : "unknown error"));
     }
 
     int changedRowCount = sqlite3_changes(db);
@@ -627,7 +630,7 @@ opsqlite_execute_raw(sqlite3 *db, std::string const &query,
                      const std::vector<JSVariant> *params,
                      std::vector<std::vector<JSVariant>> *results) {
     sqlite3_stmt *statement;
-    const char *errorMessage;
+    const char *errorMessage = nullptr;
     const char *remainingStatement = nullptr;
 
     bool isConsuming = true;
@@ -744,7 +747,8 @@ opsqlite_execute_raw(sqlite3 *db, std::string const &query,
     if (isFailed) {
         throw std::runtime_error(
             "[op-sqlite] SQLite error code: " + std::to_string(step) +
-            ", description: " + std::string(errorMessage));
+            ", description: " +
+            (errorMessage ? errorMessage : "unknown error"));
     }
 
     int changedRowCount = sqlite3_changes(db);
