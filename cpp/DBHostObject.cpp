@@ -789,7 +789,7 @@ void DBHostObject::create_jsi_functions() {
     auto promise = promiseCtr.callAsConstructor(rt, HOSTFN("executor") {
             auto resolve = std::make_shared<jsi::Value>(rt, args[0]);
 
-            auto task = [&rt, this, resolve]() {
+            auto task = [this, resolve]() {
                 flush_pending_reactive_queries(resolve);
             };
 
