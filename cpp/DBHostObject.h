@@ -44,7 +44,7 @@ class JSI_EXPORT DBHostObject : public jsi::HostObject {
                  std::shared_ptr<react::CallInvoker> invoker,
                  std::string &db_name, std::string &path,
                  std::string &crsqlite_path, std::string &sqlite_vec_path,
-                 std::string &encryption_key);
+                 std::string &zstd_path, std::string &encryption_key);
 
 #ifdef OP_SQLITE_USE_LIBSQL
     // Constructor for remoteOpen, purely for remote databases

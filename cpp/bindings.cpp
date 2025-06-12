@@ -19,10 +19,11 @@ namespace opsqlite {
 
 namespace jsi = facebook::jsi;
 
-std::string _base_path;
-std::string _crsqlite_path;
-std::string _sqlite_vec_path;
-std::vector<std::shared_ptr<DBHostObject>> dbs;
+static std::string _base_path;
+static std::string _crsqlite_path;
+static std::string _sqlite_vec_path;
+static std::string _zstd_path;
+static std::vector<std::shared_ptr<DBHostObject>> dbs;
 
 // React native will try to clean the module on JS context invalidation
 // (CodePush/Hot Reload) The clearState function is called
@@ -39,10 +40,11 @@ void invalidate() {
 void install(jsi::Runtime &rt,
              const std::shared_ptr<react::CallInvoker> &invoker,
              const char *base_path, const char *crsqlite_path,
-             const char *sqlite_vec_path) {
+             const char *sqlite_vec_path, const char *zstd_path) {
     _base_path = std::string(base_path);
     _crsqlite_path = std::string(crsqlite_path);
     _sqlite_vec_path = std::string(sqlite_vec_path);
+    _zstd_path = std::string(zstd_path);
 
     auto open = HOST_STATIC_FN("open") {
         jsi::Object options = args[0].asObject(rt);
@@ -80,7 +82,7 @@ void install(jsi::Runtime &rt,
 
         std::shared_ptr<DBHostObject> db = std::make_shared<DBHostObject>(
             rt, path, invoker, name, path, _crsqlite_path, _sqlite_vec_path,
-            encryption_key);
+            _zstd_path, encryption_key);
         dbs.emplace_back(db);
         return jsi::Object::createFromHostObject(rt, db);
     });

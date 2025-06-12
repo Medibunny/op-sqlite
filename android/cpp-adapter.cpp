@@ -33,7 +33,7 @@ private:
     std::string dbPathStr = dbPath->toStdString();
 
     opsqlite::install(*jsiRuntime, jsCallInvoker, dbPathStr.c_str(),
-                      "libcrsqlite", "libsqlite_vec");
+                      "libcrsqlite", "libsqlite_vec", "libzstd");
   }
 
   static void clearStateNativeJsi(jni::alias_ref<jni::JObject> thiz) {

@@ -86,14 +86,16 @@ std::string opsqlite_get_db_path(std::string const &db_name,
 sqlite3 *opsqlite_open(std::string const &name, std::string const &path,
                        std::string const &crsqlite_path,
                        std::string const &sqlite_vec_path,
+                       std::string const &zstd_path,
                        std::string const &encryption_key) {
 #else
 sqlite3 *opsqlite_open(std::string const &name, std::string const &path,
                        [[maybe_unused]] std::string const &crsqlite_path,
-                       [[maybe_unused]] std::string const &sqlite_vec_path) {
+                       [[maybe_unused]] std::string const &sqlite_vec_path,
+                       [[maybe_unused]] std::string const &zstd_path) {
 #endif
     std::string final_path = opsqlite_get_db_path(name, path);
-#if defined(OP_SQLITE_USE_CRSQLITE) || defined(OP_SQLITE_USE_SQLITE_VEC)
+#if defined(OP_SQLITE_USE_CRSQLITE) || defined(OP_SQLITE_USE_SQLITE_VEC) || defined(OP_SQLITE_USE_ZSTD)
     char *errMsg = nullptr;
 #endif
     sqlite3 *db;
@@ -132,6 +134,17 @@ sqlite3 *opsqlite_open(std::string const &name, std::string const &path,
     const char *vec_entry_point = "sqlite3_vec_init";
 
     sqlite3_load_extension(db, sqlite_vec_path.c_str(), vec_entry_point,
+                           &errMsg);
+
+    if (errMsg != nullptr) {
+        throw std::runtime_error(errMsg);
+    }
+#endif
+
+#ifdef OP_SQLITE_USE_ZSTD
+    const char *zstd_entry_point = "sqlite3_zstd_init";
+
+    sqlite3_load_extension(db, zstd_path.c_str(), zstd_entry_point,
                            &errMsg);
 
     if (errMsg != nullptr) {
