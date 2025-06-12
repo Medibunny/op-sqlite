@@ -143,10 +143,7 @@ sqlite3 *opsqlite_open(std::string const &name, std::string const &path,
 
 #ifdef OP_SQLITE_USE_ZSTD
     const char *zstd_entry_point = "sqlite3_zstd_init";
-
-    sqlite3_load_extension(db, zstd_path.c_str(), zstd_entry_point,
-                           &errMsg);
-
+    sqlite3_load_extension(db, zstd_path.c_str(), zstd_entry_point, &errMsg);
     if (errMsg != nullptr) {
         throw std::runtime_error(errMsg);
     }
