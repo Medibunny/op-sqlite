@@ -53,7 +53,6 @@ fts5 = false
 rtree = false
 use_sqlite_vec = false
 tokenizers = []
-use_zstd = false
 
 if(op_sqlite_config != nil)
   use_sqlcipher = op_sqlite_config["sqlcipher"] == true
@@ -66,7 +65,6 @@ if(op_sqlite_config != nil)
   rtree = op_sqlite_config["rtree"] == true
   use_sqlite_vec = op_sqlite_config["sqliteVec"] == true
   tokenizers = op_sqlite_config["tokenizers"] || []
-  use_zstd = op_sqlite_config["zstd"] == true
 end
 
 if phone_version then
@@ -91,12 +89,12 @@ Pod::Spec.new do |s|
   s.name         = "op-sqlite"
   s.version      = package["version"]
   s.summary      = package["description"]
-  s.homepage     = "https://github.com/OP-Engineering/op-sqlite"
-  s.license      = "MIT"
-  s.author       = { "author" => "info@op-engineering.com" }
+  s.homepage     = package["homepage"]
+  s.license      = package["license"]
+  s.authors      = package["author"]
 
   s.platforms    = { :ios => "13.0", :tvos => "13.0", :osx => "10.15", :visionos => "1.0" }
-  s.source       = { :git => "https://github.com/OP-Engineering/op-sqlite.git", :tag => "#{s.version}" }
+  s.source       = { :git => "https://github.com/op-engineering/op-sqlite.git", :tag => "#{s.version}" }
   
   # Base source files
   source_files = Dir.glob("ios/**/*.{h,m,mm}") + Dir.glob("cpp/**/*.{h,cpp,c}")
@@ -149,8 +147,8 @@ Pod::Spec.new do |s|
     s.dependency "React-Core"
   end
 
-  other_cflags = '-DSQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION=1 -Wno-shorten-64-to-32 -Wno-ambiguous-macro -Wno-#warnings'
-  optimizedCflags = '-DSQLITE_DQS=0 -DSQLITE_DEFAULT_MEMSTATUS=0 -DSQLITE_DEFAULT_WAL_SYNCHRONOUS=1 -DSQLITE_LIKE_DOESNT_MATCH_BLOBS=1 -DSQLITE_MAX_EXPR_DEPTH=0 -DSQLITE_OMIT_DEPRECATED=1 -DSQLITE_OMIT_PROGRESS_CALLBACK=1 -DSQLITE_OMIT_SHARED_CACHE=1 -DSQLITE_USE_ALLOCA=1 -DSQLITE_THREADSAFE=1'
+  other_cflags = '-DSQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION=1'
+  optimizedCflags = '$(inherited) -DSQLITE_DQS=0 -DSQLITE_DEFAULT_MEMSTATUS=0 -DSQLITE_DEFAULT_WAL_SYNCHRONOUS=1 -DSQLITE_LIKE_DOESNT_MATCH_BLOBS=1 -DSQLITE_MAX_EXPR_DEPTH=0 -DSQLITE_OMIT_DEPRECATED=1 -DSQLITE_OMIT_PROGRESS_CALLBACK=1 -DSQLITE_OMIT_SHARED_CACHE=1 -DSQLITE_USE_ALLOCA=1 -DSQLITE_THREADSAFE=1'
   frameworks = []
 
   if fts5 then
@@ -187,12 +185,6 @@ Pod::Spec.new do |s|
     frameworks.push("ios/sqlitevec.xcframework")
   end
 
-  if use_zstd then
-    log_message.call("[OP-SQLITE] using zstd 📉")
-    xcconfig[:GCC_PREPROCESSOR_DEFINITIONS] += " OP_SQLITE_USE_ZSTD=1"
-    frameworks.push("ios/libzstd.xcframework")
-  end
-
   if use_libsql then
     xcconfig[:GCC_PREPROCESSOR_DEFINITIONS] += " OP_SQLITE_USE_LIBSQL=1"
     if use_crsqlite then
@@ -216,14 +208,8 @@ Pod::Spec.new do |s|
     end
   end
 
-  xcconfig[:OTHER_CFLAGS] = "$(inherited) " + other_cflags
+  xcconfig[:OTHER_CFLAGS] = other_cflags
   s.pod_target_xcconfig = xcconfig
   s.vendored_frameworks = frameworks
   s.exclude_files = exclude_files
-  s.header_dir = "cpp"
-  s.requires_arc = true
-  s.frameworks = "Security"
-  s.compiler_flags = "-Wall -Werror -fno-strict-aliasing"
-  s.pod_target_xcconfig = { 'CLANG_CXX_LANGUAGE_STANDARD' => 'c++20' }
-  s.user_target_xcconfig = { 'CLANG_CXX_LANGUAGE_STANDARD' => 'c++20' }
 end
