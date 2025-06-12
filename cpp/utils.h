@@ -36,19 +36,12 @@ create_raw_result(jsi::Runtime &rt, const BridgeResult &status,
 void to_batch_arguments(jsi::Runtime &rt, jsi::Array const &batch_params,
                         std::vector<BatchArguments> *commands);
 
+BatchResult import_sql_file(sqlite3 *db, std::string path);
+
 bool folder_exists(const std::string &name);
 
 bool file_exists(const std::string &path);
 
 void log_to_console(jsi::Runtime &rt, const std::string &message);
-
-std::vector<BatchArguments> to_batch_arguments(jsi::Runtime &rt,
-                                               const jsi::Array &batchParams);
-
-#ifndef OP_SQLITE_USE_LIBSQL
-ImportResult import_sql_file(sqlite3 *db, const std::string &fileName);
-#endif
-
-std::string zstd_compress_file(const std::string &fileName);
 
 } // namespace opsqlite

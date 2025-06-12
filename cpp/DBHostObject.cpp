@@ -759,12 +759,6 @@ void DBHostObject::create_jsi_functions() {
                                                  preparedStatementHostObject);
     });
 
-    function_map["compressFile"] = HOSTFN("compressFile") {
-        auto path = args[0].asString(rt).utf8(rt);
-        auto result = zstd_compress_file(path);
-        return jsi::String::createFromUtf8(rt, result);
-    };
-
     function_map["getDbPath"] = HOSTFN("getDbPath") {
         std::string path = std::string(base_path);
 

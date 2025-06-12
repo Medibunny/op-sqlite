@@ -5,7 +5,6 @@
 #endif
 #include <fstream>
 #include <sys/stat.h>
-#include <zstd.h>
 
 namespace opsqlite {
 
@@ -323,39 +322,6 @@ void log_to_console(jsi::Runtime &runtime, const std::string &message) {
     auto console = runtime.global().getPropertyAsObject(runtime, "console");
     auto log = console.getPropertyAsFunction(runtime, "log");
     log.call(runtime, jsi::String::createFromUtf8(runtime, message));
-}
-
-std::string zstd_compress_file(const std::string &fileName) {
-  std::ifstream inputFile(fileName, std::ios::binary);
-  if (!inputFile.is_open()) {
-    throw std::runtime_error("Failed to open input file for compression");
-  }
-
-  std::vector<char> srcBuffer((std::istreambuf_iterator<char>(inputFile)),
-                              std::istreambuf_iterator<char>());
-  inputFile.close();
-
-  size_t const cBuffSize = ZSTD_compressBound(srcBuffer.size());
-  std::vector<char> compressedBuffer(cBuffSize);
-
-  size_t const cSize = ZSTD_compress(
-      compressedBuffer.data(), cBuffSize, srcBuffer.data(), srcBuffer.size(),
-      1); // 1 is the default compression level
-
-  if (ZSTD_isError(cSize)) {
-    throw std::runtime_error("ZSTD compression failed");
-  }
-
-  std::string outputFileName = fileName + ".zst";
-  std::ofstream outputFile(outputFileName, std::ios::binary);
-  if (!outputFile.is_open()) {
-    throw std::runtime_error("Failed to open output file for writing");
-  }
-
-  outputFile.write(compressedBuffer.data(), cSize);
-  outputFile.close();
-
-  return outputFileName;
 }
 
 } // namespace opsqlite
