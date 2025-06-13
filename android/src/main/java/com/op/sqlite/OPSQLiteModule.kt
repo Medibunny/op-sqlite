@@ -64,13 +64,29 @@ internal class OPSQLiteModule(context: ReactApplicationContext?) : ReactContextB
         val assetsManager = context.assets
 
         try {
-
             val databasesFolder =
-                    context.getDatabasePath("defaultDatabase")
-                            .absolutePath
-                            .replace("defaultDatabase", "")
+                context.getDatabasePath("defaultDatabase")
+                    .absolutePath
+                    .replace("defaultDatabase", "")
 
             val outputFile = File(databasesFolder, filename)
+
+            var assetStream: InputStream? = null
+            try {
+                assetStream = assetsManager.open("$path/$filename")
+            } catch (e: Exception) {
+                // Asset not found
+            }
+
+            if (assetStream == null) {
+                if (outputFile.exists()) {
+                    promise.resolve(true)
+                } else {
+                    promise.reject("op-sqlite-error", "Asset not found for file: $filename")
+                }
+                return
+            }
+
 
             if (outputFile.exists()) {
                 if(overwrite) {
@@ -81,26 +97,23 @@ internal class OPSQLiteModule(context: ReactApplicationContext?) : ReactContextB
                 }
             }
 
-            val inputStream: InputStream = assetsManager.open("$path/$filename")
-
-            // Open the output stream for the output file
             val outputStream: OutputStream = FileOutputStream(outputFile)
 
             // Copy the contents from the input stream to the output stream
             val buffer = ByteArray(1024)
             var length: Int
-            while (inputStream.read(buffer).also { length = it } > 0) {
+            while (assetStream.read(buffer).also { length = it } > 0) {
                 outputStream.write(buffer, 0, length)
             }
 
             // Close the streams
-            inputStream.close()
+            assetStream.close()
             outputStream.close()
 
             promise.resolve(true)
         } catch (exception: Exception) {
             RNLog.e(this.reactApplicationContext, "Exception: $exception")
-            promise.resolve(false)
+            promise.reject("op-sqlite-error", "Failed to move database asset: ${exception.message}", exception)
         }
     }
 

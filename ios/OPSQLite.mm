@@ -83,11 +83,6 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(install) {
     NSString *sqlite_vec_path =
         [libsqlitevec_bundle pathForResource:@"sqlitevec" ofType:@""];
     
-    NSBundle *libzstd_bundle =
-        [NSBundle bundleWithIdentifier:@"com.facebook.zstd"];
-    NSString *zstd_path =
-        [libzstd_bundle pathForResource:@"libzstd" ofType:@""];
-
     if (crsqlite_path == nil) {
         crsqlite_path = @"";
     }
@@ -96,13 +91,9 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(install) {
         sqlite_vec_path = @"";
     }
     
-    if (zstd_path == nil) {
-        zstd_path = @"";
-    }
-
     opsqlite::install(runtime, callInvoker, [documentPath UTF8String],
                       [crsqlite_path UTF8String], [sqlite_vec_path UTF8String],
-                      [zstd_path UTF8String]);
+                      [@"" UTF8String]);
     return @true;
 }
 
@@ -121,26 +112,30 @@ RCT_EXPORT_METHOD(moveAssetsDatabase : (NSDictionary *)args resolve : (
     NSString *filename = args[@"filename"];
     BOOL overwrite = [args[@"overwrite"] boolValue];
 
+    NSString *destinationPath =
+        [documentPath stringByAppendingPathComponent:filename];
+    NSFileManager *fileManager = [NSFileManager defaultManager];
+
     NSString *sourcePath = [[NSBundle mainBundle] pathForResource:filename
                                                            ofType:nil];
     
     if (sourcePath == nil) {
-        NSString *msg = [NSString stringWithFormat:@"Asset not found for file: %@", filename];
-        reject(@"op-sqlite-error", msg, nil);
+        if([fileManager fileExistsAtPath:destinationPath]) {
+            resolve(@true);
+        } else {
+            NSString *msg = [NSString stringWithFormat:@"Asset not found for file: %@", filename];
+            reject(@"op-sqlite-error", msg, nil);
+        }
         return;
     }
 
-    NSString *destinationPath =
-        [documentPath stringByAppendingPathComponent:filename];
-
     NSError *error;
-    NSFileManager *fileManager = [NSFileManager defaultManager];
     if ([fileManager fileExistsAtPath:destinationPath]) {
         if (overwrite) {
             [fileManager removeItemAtPath:destinationPath error:&error];
             if (error) {
                 NSLog(@"Error: %@", error);
-                resolve(@false);
+                reject(@"op-sqlite-error", @"Failed to remove existing database", error);
                 return;
             }
         } else {
@@ -152,7 +147,7 @@ RCT_EXPORT_METHOD(moveAssetsDatabase : (NSDictionary *)args resolve : (
     [fileManager copyItemAtPath:sourcePath toPath:destinationPath error:&error];
     if (error) {
         NSLog(@"Error: %@", error);
-        resolve(@false);
+        reject(@"op-sqlite-error", @"Failed to copy database from assets", error);
         return;
     }
     resolve(@true);
