@@ -8,6 +8,9 @@
 #include "logs.h"
 #include "macros.h"
 #include "utils.h"
+#ifdef OP_SQLITE_USE_ZSTD
+#include "zstd.h"
+#endif
 #include <iostream>
 #include <utility>
 
@@ -133,6 +136,104 @@ void DBHostObject::auto_register_update_hook() {
 }
 #endif
 
+#ifdef OP_SQLITE_USE_ZSTD
+/**
+ * A custom SQL function to compress data using ZSTD.
+ */
+static void zstd_compress_sql(sqlite3_context *ctx, int argc,
+                              sqlite3_value **argv) {
+    if (argc == 0) {
+        sqlite3_result_null(ctx);
+        return;
+    }
+
+    int input_type = sqlite3_value_type(argv[0]);
+    const void *input_data;
+    int input_size;
+
+    if (input_type == SQLITE_BLOB) {
+        input_data = sqlite3_value_blob(argv[0]);
+        input_size = sqlite3_value_bytes(argv[0]);
+    } else if (input_type == SQLITE_TEXT) {
+        input_data = sqlite3_value_text(argv[0]);
+        input_size = sqlite3_value_bytes(argv[0]);
+    } else {
+        sqlite3_result_null(ctx);
+        return;
+    }
+
+    if (input_data == NULL) {
+        sqlite3_result_null(ctx);
+        return;
+    }
+
+    size_t const cBuffSize = ZSTD_compressBound(input_size);
+    void *const cBuffer = malloc(cBuffSize);
+
+    if (cBuffer == NULL) {
+        sqlite3_result_error_nomem(ctx);
+        return;
+    }
+
+    size_t const cSize = ZSTD_compress(cBuffer, cBuffSize, input_data, input_size, 1);
+
+    if (ZSTD_isError(cSize)) {
+        sqlite3_result_error(ctx, "zstd compression failed", -1);
+        free(cBuffer);
+        return;
+    }
+
+    sqlite3_result_blob(ctx, cBuffer, cSize, free);
+}
+
+/**
+ * A custom SQL function to decompress data using ZSTD.
+ */
+static void zstd_decompress_sql(sqlite3_context *ctx, int argc,
+                                sqlite3_value **argv) {
+    if (argc == 0) {
+        sqlite3_result_null(ctx);
+        return;
+    }
+
+    if (sqlite3_value_type(argv[0]) != SQLITE_BLOB) {
+        sqlite3_result_error(ctx, "zstd_decompress expects a blob", -1);
+        return;
+    }
+
+    const void *cBuffer = sqlite3_value_blob(argv[0]);
+    int cSize = sqlite3_value_bytes(argv[0]);
+
+    if (cBuffer == NULL) {
+        sqlite3_result_null(ctx);
+        return;
+    }
+
+    unsigned long long const rSize = ZSTD_getFrameContentSize(cBuffer, cSize);
+
+    if (rSize == ZSTD_CONTENTSIZE_ERROR || rSize == ZSTD_CONTENTSIZE_UNKNOWN) {
+        sqlite3_result_error(ctx, "invalid compressed data", -1);
+        return;
+    }
+
+    void *rBuff = malloc(rSize);
+    if (rBuff == NULL) {
+        sqlite3_result_error_nomem(ctx);
+        return;
+    }
+
+    size_t const dSize = ZSTD_decompress(rBuff, rSize, cBuffer, cSize);
+
+    if (dSize != rSize) {
+        sqlite3_result_error(ctx, "zstd decompression failed", -1);
+        free(rBuff);
+        return;
+    }
+
+    sqlite3_result_blob(ctx, rBuff, dSize, free);
+}
+#endif
+
 //    _____                _                   _
 //   / ____|              | |                 | |
 //  | |     ___  _ __  ___| |_ _ __ _   _  ___| |_ ___  _ __
@@ -184,6 +285,12 @@ DBHostObject::DBHostObject(jsi::Runtime &rt, std::string &base_path,
     db = opsqlite_open(db_name, path, crsqlite_path, sqlite_vec_path,
                        zstd_path);
 #endif
+
+#ifdef OP_SQLITE_USE_ZSTD
+    sqlite3_create_function_v2(db, "zstd_compress", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, zstd_compress_sql, NULL, NULL, NULL);
+    sqlite3_create_function_v2(db, "zstd_decompress", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, zstd_decompress_sql, NULL, NULL, NULL);
+#endif
+
     create_jsi_functions();
 };
 
