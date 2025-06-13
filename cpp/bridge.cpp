@@ -89,7 +89,6 @@ std::string opsqlite_get_db_path(std::string const &db_name,
 sqlite3 *opsqlite_open(std::string const &name, std::string const &path,
                        std::string const &crsqlite_path,
                        std::string const &sqlite_vec_path,
-                       std::string const &zstd_path,
                        std::string const &encryption_key) {
 #else
 sqlite3 *opsqlite_open(std::string const &name, std::string const &path,
@@ -145,11 +144,13 @@ sqlite3 *opsqlite_open(std::string const &name, std::string const &path,
 #endif
 
 #ifdef OP_SQLITE_USE_ZSTD
-    const char *zstd_entry_point = "sqlite3_zstd_init";
-    sqlite3_load_extension(db, zstd_path.c_str(), zstd_entry_point, &errMsg);
-    if (errMsg != nullptr) {
-        throw std::runtime_error(errMsg);
-    }
+    // if (!zstd_path.empty()) {
+    //     const char *zstd_entry_point = "sqlite3_zstd_init";
+    //     sqlite3_load_extension(db, zstd_path.c_str(), zstd_entry_point, &errMsg);
+    //     if (errMsg != nullptr) {
+    //         throw std::runtime_error(errMsg);
+    //     }
+    // }
 #endif
 
     TOKENIZER_LIST
