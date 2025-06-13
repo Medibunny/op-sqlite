@@ -226,23 +226,6 @@ static void zstd_decompress_sql(sqlite3_context *ctx, int argc,
 
     sqlite3_result_blob(ctx, rBuff, dSize, free);
 }
-
-int sqlite3_zstd_init(sqlite3 *db, char **pzErrMsg,
-                      const sqlite3_api_routines *pApi) {
-    SQLITE_EXTENSION_INIT2(pApi);
-    int rc = SQLITE_OK;
-    rc = sqlite3_create_function(db, "zstd_compress", 1,
-                                 SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
-                                 zstd_compress_sql, 0, 0);
-    if (rc != SQLITE_OK) {
-        return rc;
-    }
-    rc = sqlite3_create_function(db, "zstd_decompress", 1,
-                                 SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
-                                 zstd_decompress_sql, 0, 0);
-    return rc;
-}
-
 #endif
 
 //    _____                _                   _
