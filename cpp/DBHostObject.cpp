@@ -224,7 +224,11 @@ static void zstd_decompress_sql(sqlite3_context *ctx, int argc,
         return;
     }
 
-    sqlite3_result_blob(ctx, rBuff, dSize, free);
+    if (argc == 2 && sqlite3_value_type(argv[1]) == SQLITE_INTEGER && sqlite3_value_int(argv[1]) == 1) {
+        sqlite3_result_text(ctx, static_cast<const char*>(rBuff), dSize, free);
+    } else {
+        sqlite3_result_blob(ctx, rBuff, dSize, free);
+    }
 }
 #endif
 
@@ -248,12 +252,10 @@ DBHostObject::DBHostObject(jsi::Runtime &rt, std::string &url,
 DBHostObject::DBHostObject(jsi::Runtime &rt,
                            std::shared_ptr<react::CallInvoker> invoker,
                            std::string &db_name, std::string &path,
-                           std::string &url, std::string &auth_token,
-                           int sync_interval, bool offline)
-    : db_name(db_name), invoker(std::move(invoker)), rt(rt) {
+                           std::string &crsqlite_path, int sync_interval, bool offline)
+    : base_path(path), invoker(std::move(invoker)), db_name(db_name), rt(rt) {
     _thread_pool = std::make_shared<ThreadPool>();
-    db = opsqlite_libsql_open_sync(db_name, path, url, auth_token,
-                                   sync_interval, offline);
+    db = opsqlite_libsql_open_sync(db_name, path, crsqlite_path, "", sync_interval, offline);
 
     create_jsi_functions();
 }
@@ -282,7 +284,7 @@ DBHostObject::DBHostObject(jsi::Runtime &rt, std::string &base_path,
 
 #ifdef OP_SQLITE_USE_ZSTD
     sqlite3_create_function_v2(db, "zstd_compress", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, zstd_compress_sql, NULL, NULL, NULL);
-    sqlite3_create_function_v2(db, "zstd_decompress", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, zstd_decompress_sql, NULL, NULL, NULL);
+    sqlite3_create_function_v2(db, "zstd_decompress", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, zstd_decompress_sql, NULL, NULL, NULL);
 #endif
 
     create_jsi_functions();
