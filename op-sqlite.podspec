@@ -224,4 +224,12 @@ Pod::Spec.new do |s|
   s.pod_target_xcconfig = xcconfig
   s.vendored_frameworks = frameworks
   s.exclude_files = exclude_files
+
+  s.post_install do |installer|
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |config|
+        config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'arm64'
+      end
+    end
+  end
 end
