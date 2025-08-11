@@ -114,6 +114,74 @@ void install(jsi::Runtime &rt,
 #endif
     });
 
+#ifdef OP_SQLITE_USE_LIBSQL
+    auto open_remote = HOST_STATIC_FN("openRemote") {
+        jsi::Object options = args[0].asObject(rt);
+      
+        std::string url = options.getProperty(rt, "url").asString(rt).utf8(rt);
+      
+        std::string auth_token =
+            options.getProperty(rt, "authToken").asString(rt).utf8(rt);
+      
+        std::shared_ptr<DBHostObject> db = std::make_shared<DBHostObject>(
+            rt, url, auth_token, invoker);
+      
+        return jsi::Object::createFromHostObject(rt, db);
+    });
+
+    auto open_sync = HOST_STATIC_FN("openSync") {
+        jsi::Object options = args[0].asObject(rt);
+        std::string name =
+            options.getProperty(rt, "name").asString(rt).utf8(rt);
+        std::string path = std::string(_base_path);
+        std::string url = options.getProperty(rt, "url").asString(rt).utf8(rt);
+        std::string auth_token =
+            options.getProperty(rt, "authToken").asString(rt).utf8(rt);
+
+        int sync_interval = 0;
+        if (options.hasProperty(rt, "libsqlSyncInterval")) {
+            sync_interval = static_cast<int>(
+                options.getProperty(rt, "libsqlSyncInterval").asNumber());
+        }
+
+        bool offline = false;
+        if (options.hasProperty(rt, "libsqlOffline")) {
+            offline = options.getProperty(rt, "libsqlOffline").asBool();
+        }
+
+        std::string encryption_key;
+        if (options.hasProperty(rt, "encryptionKey")) {
+            encryption_key =
+                options.getProperty(rt, "encryptionKey").asString(rt).utf8(rt);
+        }
+
+        std::string remote_encryption_key;
+        if (options.hasProperty(rt, "remoteEncryptionKey")) {
+            encryption_key =
+                options.getProperty(rt, "remoteEncryptionKey").asString(rt).utf8(rt);
+        }
+
+        std::string location;
+        if (options.hasProperty(rt, "location")) {
+            location =
+                options.getProperty(rt, "location").asString(rt).utf8(rt);
+        }
+        if (!location.empty()) {
+            if (location == ":memory:") {
+                path = ":memory:";
+            } else if (location.rfind("/", 0) == 0) {
+                path = location;
+            } else {
+                path = path + "/" + location;
+            }
+        }
+
+        std::shared_ptr<DBHostObject> db = std::make_shared<DBHostObject>(
+            rt, invoker, name, path, url, auth_token, sync_interval, offline, encryption_key, remote_encryption_key);
+        return jsi::Object::createFromHostObject(rt, db);
+    });
+#endif
+
     jsi::Object module = jsi::Object(rt);
     module.setProperty(rt, "open", std::move(open));
     module.setProperty(rt, "isSQLCipher", std::move(is_sqlcipher));

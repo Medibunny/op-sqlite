@@ -8,7 +8,11 @@
 #ifdef OP_SQLITE_USE_LIBSQL
 #include "libsql/bridge.h"
 #else
+#ifdef __ANDROID__
+#include "sqlite3.h"
+#else
 #include <sqlite3.h>
+#endif
 #endif
 #include <unordered_map>
 #include <vector>
@@ -54,7 +58,9 @@ class JSI_EXPORT DBHostObject : public jsi::HostObject {
     // Constructor for a local database with remote sync
     DBHostObject(jsi::Runtime &rt, std::shared_ptr<react::CallInvoker> invoker,
                  std::string &db_name, std::string &path, std::string &url,
-                 std::string &auth_token, int sync_interval, bool offline);
+                 std::string &auth_token, int sync_interval, bool offline,
+                 std::string &encryption_key,
+                 std::string &remote_encryption_key);
 #endif
 
     std::vector<jsi::PropNameID> getPropertyNames(jsi::Runtime &rt) override;

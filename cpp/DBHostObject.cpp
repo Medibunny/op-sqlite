@@ -239,6 +239,7 @@ static void zstd_decompress_sql(sqlite3_context *ctx, int argc,
 //  | |___| (_) | | | \__ \ |_| |  | |_| | (__| || (_) | |
 //   \_____\___/|_| |_|___/\__|_|   \__,_|\___|\__\___/|_|
 #ifdef OP_SQLITE_USE_LIBSQL
+// Remote connection constructor
 DBHostObject::DBHostObject(jsi::Runtime &rt, std::string &url,
                            std::string &auth_token,
                            std::shared_ptr<react::CallInvoker> invoker)
@@ -249,13 +250,28 @@ DBHostObject::DBHostObject(jsi::Runtime &rt, std::string &url,
     create_jsi_functions();
 }
 
+// Sync connection constructor
 DBHostObject::DBHostObject(jsi::Runtime &rt,
                            std::shared_ptr<react::CallInvoker> invoker,
                            std::string &db_name, std::string &path,
+<<<<<<< HEAD
                            std::string &crsqlite_path, int sync_interval, bool offline)
     : base_path(path), invoker(std::move(invoker)), db_name(db_name), rt(rt) {
     _thread_pool = std::make_shared<ThreadPool>();
     db = opsqlite_libsql_open_sync(db_name, path, crsqlite_path, "", sync_interval, offline);
+=======
+                           std::string &url, std::string &auth_token,
+                           int sync_interval, bool offline,
+                           std::string &encryption_key,
+                           std::string &remote_encryption_key)
+    : db_name(db_name), invoker(std::move(invoker)), rt(rt) {
+
+    _thread_pool = std::make_shared<ThreadPool>();
+
+    db = opsqlite_libsql_open_sync(db_name, path, url, auth_token,
+                                   sync_interval, offline, encryption_key,
+                                   remote_encryption_key);
+>>>>>>> upstream/main
 
     create_jsi_functions();
 }
