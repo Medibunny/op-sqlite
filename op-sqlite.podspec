@@ -191,19 +191,17 @@ Pod::Spec.new do |s|
     frameworks.push("ios/sqlitevec.xcframework")
   end
 
+  if use_libsql then
+    log_message.call("Called LibSQL")
+    xcconfig[:GCC_PREPROCESSOR_DEFINITIONS] += " OP_SQLITE_USE_LIBSQL=1"
+    frameworks.push("ios/libsql.xcframework")  
+  end
+
+
   if use_zstd then
     log_message.call("[OP-SQLITE] using zstd 📉")
     xcconfig[:GCC_PREPROCESSOR_DEFINITIONS] += " OP_SQLITE_USE_ZSTD=1"
     frameworks.push("ios/libzstd.xcframework")
-  end
-
-  if use_libsql then
-    xcconfig[:GCC_PREPROCESSOR_DEFINITIONS] += " OP_SQLITE_USE_LIBSQL=1"
-    if use_crsqlite then
-      frameworks = ["ios/libsql.xcframework", "ios/crsqlite.xcframework"]
-    else
-      frameworks = ["ios/libsql.xcframework"]
-    end
   end
 
   if sqlite_flags != "" then
