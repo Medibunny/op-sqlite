@@ -40,6 +40,8 @@ create_raw_result(jsi::Runtime &rt, const BridgeResult &status,
 void to_batch_arguments(jsi::Runtime &rt, jsi::Array const &batch_params,
                         std::vector<BatchArguments> *commands);
 
+bool is_utf8(const unsigned char *data, size_t len);
+
 BatchResult import_sql_file(sqlite3 *db, std::string path);
 
 bool folder_exists(const std::string &name);

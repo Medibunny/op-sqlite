@@ -223,8 +223,10 @@ static void zstd_decompress_sql(sqlite3_context *ctx, int argc,
         free(rBuff);
         return;
     }
+    
+    bool is_text = is_utf8(static_cast<const unsigned char*>(rBuff), dSize);
 
-    if (argc == 2 && sqlite3_value_type(argv[1]) == SQLITE_INTEGER && sqlite3_value_int(argv[1]) == 1) {
+    if (is_text) {
         sqlite3_result_text(ctx, static_cast<const char*>(rBuff), dSize, free);
     } else {
         sqlite3_result_blob(ctx, rBuff, dSize, free);

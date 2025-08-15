@@ -324,4 +324,29 @@ void log_to_console(jsi::Runtime &runtime, const std::string &message) {
     log.call(runtime, jsi::String::createFromUtf8(runtime, message));
 }
 
+bool is_utf8(const unsigned char *data, size_t len) {
+    int i = 0;
+    while (i < len) {
+        if (data[i] <= 0x7F) { // 0-127, single byte
+            i += 1;
+        } else if (data[i] >= 0xC2 && data[i] <= 0xDF) { // 194-223, 2-byte
+            if (i + 1 >= len || data[i + 1] < 0x80 || data[i + 1] > 0xBF) return false;
+            i += 2;
+        } else if (data[i] >= 0xE0 && data[i] <= 0xEF) { // 224-239, 3-byte
+            if (i + 2 >= len || data[i + 1] < 0x80 || data[i + 1] > 0xBF || data[i + 2] < 0x80 || data[i + 2] > 0xBF) return false;
+            if (data[i] == 0xE0 && data[i+1] < 0xA0) return false; // Overlong encoding
+            if (data[i] == 0xED && data[i+1] > 0x9F) return false; // Surrogates
+            i += 3;
+        } else if (data[i] >= 0xF0 && data[i] <= 0xF4) { // 240-244, 4-byte
+            if (i + 3 >= len || data[i + 1] < 0x80 || data[i + 1] > 0xBF || data[i + 2] < 0x80 || data[i + 2] > 0xBF || data[i + 3] < 0x80 || data[i + 3] > 0xBF) return false;
+            if (data[i] == 0xF0 && data[i+1] < 0x90) return false; // Overlong encoding
+            if (data[i] == 0xF4 && data[i+1] > 0x8F) return false; // > U+10FFFF
+            i += 4;
+        } else {
+            return false;
+        }
+    }
+    return true;
+}
+
 } // namespace opsqlite
